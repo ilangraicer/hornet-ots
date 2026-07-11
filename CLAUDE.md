@@ -17,13 +17,13 @@ Fork of [brian7704/OpenTAKServer](https://github.com/brian7704/OpenTAKServer); `
 
 ```bash
 brew services start rabbitmq postgresql@17      # deps (no Docker on this Mac)
-PATH="/usr/bin:$PATH" .venv/bin/opentakserver   # run server; logs → ots.log
+PATH="/usr/bin:$PATH" OTS_DATA_FOLDER="$PWD/data" .venv/bin/opentakserver   # logs → ots.log
 curl http://127.0.0.1:8081/api/health           # → {"status":"healthy"}
 ```
 
 - venv: `.venv` (Python 3.12 via brew; system 3.14 breaks deps). Installed with `pip install -e .` + `pip install "psycopg[binary]"`.
 - DB: Postgres `ots`/`hornet-dev`@localhost (OTS 1.7 requires Postgres; SQLite fails on CREATE SEQUENCE).
-- Config: `~/ots/config.yml` (SQLALCHEMY_DATABASE_URI already set).
+- Runtime data + config: `data/` in this repo (gitignored — contains CA private keys, never commit). `data/config.yml` has SQLALCHEMY_DATABASE_URI + absolute paths; if the repo moves, re-run the sed on config.yml paths.
 - **PATH override is mandatory**: Homebrew OpenSSL 3.5/3.6 `-passin` is broken on this Mac; LibreSSL (/usr/bin) works. Our first fork commit fixed `use_legacy` detection in `opentakserver/certificate_authority.py` (`_openssl_supports_legacy`).
 - Web login (dev only): `administrator`/`password` at the UI (hornet-ui repo, vite :5173).
 
