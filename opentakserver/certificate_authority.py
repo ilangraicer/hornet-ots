@@ -17,6 +17,18 @@ from jinja2 import Template
 from .ca_config import ca_config, server_config
 
 
+def _openssl_supports_legacy() -> bool:
+    """True only if the openssl CLI actually accepts pkcs12 -legacy.
+
+    The old check (`openssl list -providers` exit code) misfires on LibreSSL
+    (macOS), which exits 0 for unknown commands but has no -legacy option.
+    """
+    result = subprocess.run(
+        "openssl pkcs12 -help", shell=True, capture_output=True, text=True
+    )
+    return "-legacy" in (result.stdout + result.stderr)
+
+
 class CertificateAuthority:
 
     def __init__(self, logger, app):
@@ -65,7 +77,7 @@ class CertificateAuthority:
             if exit_code:
                 raise Exception("Failed to add trust to CA. Exit code {}".format(exit_code))
 
-            use_legacy = not subprocess.call("openssl list -providers", shell=True)
+            use_legacy = _openssl_supports_legacy()
 
             if use_legacy:
                 command = "openssl pkcs12 -legacy -export -in {} -out {} -passout pass:{} -nokeys -caname {}".format(
@@ -159,7 +171,7 @@ class CertificateAuthority:
 
         self.sign_csr(csr_bytes, common_name, server)
 
-        use_legacy = not subprocess.call("openssl list -providers", shell=True)
+        use_legacy = _openssl_supports_legacy()
 
         if use_legacy:
             command = "openssl pkcs12 -legacy -export -in {}.pem -inkey {}.key -out {}.p12 -name {} -CAfile {} -passin pass:{} -passout pass:{}".format(
