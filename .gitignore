@@ -169,3 +169,5 @@ instance/*
 .env
 
 /data/
+
+.DS_Store
