@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from xml.etree.ElementTree import tostring
 
-from androguard.core.apk import APK
 from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask import request
@@ -42,6 +41,20 @@ class Packages(db.Model):
     atak_version: Mapped[str] = mapped_column(String(255), nullable=True)
 
     def from_wtform(self, form: PackageForm):
+        # Hornet fork: the web app is the only client, so ATAK/iTAK APK distribution is
+        # not supported. androguard (the APK parser) pulls in ~216 MB of transitive deps
+        # (frida, matplotlib, numpy, ipython), so it is no longer installed. This import
+        # is deliberately lazy: everything else about the Packages model still works,
+        # and only this upload path fails, with an explicit message.
+        try:
+            from androguard.core.apk import APK
+        except ImportError as e:
+            raise NotImplementedError(
+                "APK package upload is not supported in the Hornet fork: androguard is "
+                "not installed (web app is the only client). Re-add the 'androguard' "
+                "dependency in pyproject.toml if ATAK package hosting is ever needed."
+            ) from e
+
         self.platform = form.platform.data
         self.plugin_type = form.plugin_type.data
         self.file_name = secure_filename(form.apk.data.filename)
