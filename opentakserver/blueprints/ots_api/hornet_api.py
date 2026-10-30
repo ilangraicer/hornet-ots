@@ -30,7 +30,6 @@ MAX_HISTORY_POINTS = 5000
 MAX_MESSAGE_LEN = 4000
 MARKER_KINDS = ("point", "camp", "water", "hazard", "vehicle", "carcass", "sighting", "gate")
 HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
-USERNAME = re.compile(r"^[A-Za-z0-9._-]{3,32}$")
 
 _viewer_role_ready = False
 
@@ -263,8 +262,11 @@ def create_user():
     username = str(data.get("username") or "").strip()
     password = str(data.get("password") or "")
     role = data.get("role") or ROLE_OPERATOR
-    if not USERNAME.match(username):
-        return _err("Username: 3-32 characters, letters, digits, . _ -")
+    # Use Flask-Security's own rules so the account can actually log in
+    problem, normalized = current_app.security._username_util.validate(username)
+    if problem or not normalized or not 3 <= len(normalized) <= 32:
+        return _err(problem or "Username: 3-32 characters, letters, digits, _ and .")
+    username = normalized
     if len(password) < 12:
         return _err("Password must be at least 12 characters")
     if role not in ROLES:
