@@ -37,6 +37,13 @@ from opentakserver.functions import iso8601_string_from_datetime, datetime_from_
 
 # These unused imports are required by SQLAlchemy, don't remove them
 from opentakserver.models.Alert import Alert
+# Federation models must be registered before the Group mapper is configured (upstream bug, Oct 2026)
+import opentakserver.models.FederationConnection  # noqa: F401
+import opentakserver.models.FederationGroups  # noqa: F401
+import opentakserver.models.Federate  # noqa: F401
+import opentakserver.models.FederateGroupMapping  # noqa: F401
+import opentakserver.models.FederateGroups  # noqa: F401
+import opentakserver.models.FederateToken  # noqa: F401
 from opentakserver.models.CasEvac import CasEvac
 from opentakserver.models.Certificate import Certificate
 from opentakserver.models.Chatrooms import Chatroom

@@ -45,6 +45,13 @@ from opentakserver.models.EUD import EUD
 from opentakserver.models.EUDStats import EUDStats
 from opentakserver.models.GeoChat import GeoChat
 from opentakserver.models.Group import Group
+# Federation models must be registered before the Group mapper is configured (upstream bug, Oct 2026)
+import opentakserver.models.FederationConnection  # noqa: F401
+import opentakserver.models.FederationGroups  # noqa: F401
+import opentakserver.models.Federate  # noqa: F401
+import opentakserver.models.FederateGroupMapping  # noqa: F401
+import opentakserver.models.FederateGroups  # noqa: F401
+import opentakserver.models.FederateToken  # noqa: F401
 from opentakserver.models.GroupMission import GroupMission
 from opentakserver.models.Icon import Icon
 from opentakserver.models.Marker import Marker
