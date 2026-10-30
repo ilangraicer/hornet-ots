@@ -175,3 +175,5 @@ instance/*
 # Hornet deploy secrets / map data
 deploy/.env
 deploy/tiles/*.pmtiles
+deploy/web/
+deploy/tiles/assets/

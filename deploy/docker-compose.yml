@@ -83,10 +83,12 @@ services:
       - "443:443/udp"
     environment:
       API_HOST: ${API_HOST}
+      WEB_HOST: ${WEB_HOST}
       WEB_ORIGIN: ${WEB_ORIGIN}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./tiles:/srv/tiles:ro
+      - ./web:/srv/web:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:

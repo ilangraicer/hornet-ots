@@ -1,4 +1,4 @@
-{$API_HOST} {
+(hornet_common) {
 	encode zstd gzip
 
 	header {
@@ -6,6 +6,7 @@
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
 		-Server
 	}
 
@@ -15,17 +16,38 @@
 		respond 404
 	}
 
-	# Map tiles (PMTiles, served with HTTP range requests) for the web client on Vercel
+	# Map tiles (PMTiles via HTTP range requests)
 	handle /tiles/* {
-		header Access-Control-Allow-Origin {$WEB_ORIGIN}
-		header Access-Control-Allow-Headers "Range"
-		header Access-Control-Expose-Headers "Content-Length, Content-Range, ETag"
+		header Cache-Control "public, max-age=86400"
 		root * /srv
 		file_server
 	}
 
-	# Everything else -> OTS API + socket.io
-	handle {
+	handle /api/* {
 		reverse_proxy ots-api:8081
+	}
+	handle /socket.io/* {
+		reverse_proxy ots-api:8081
+	}
+}
+
+# Web app (hornet-web static build) + API on one origin: cookies and XSRF work without CORS
+{$WEB_HOST} {
+	import hornet_common
+
+	handle {
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss://{$WEB_HOST}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# API host (health checks, tools)
+{$API_HOST} {
+	import hornet_common
+
+	handle {
+		respond 404
 	}
 }
