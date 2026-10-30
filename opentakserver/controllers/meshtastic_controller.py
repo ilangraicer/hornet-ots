@@ -15,7 +15,7 @@ from google.protobuf.json_format import MessageToJson
 from meshtastic import BROADCAST_NUM, mesh_pb2, mqtt_pb2, portnums_pb2, protocols
 from pika.spec import Basic, BasicProperties, Channel
 
-from opentakserver.controllers.rabbitmq_client import RabbitMQClient
+from opentakserver.rabbitmq_client import RabbitMQClient
 from opentakserver.extensions import db, logger, socketio
 from opentakserver.models.EUD import EUD
 from opentakserver.models.Meshtastic import MeshtasticChannel
@@ -417,6 +417,7 @@ class MeshtasticController(RabbitMQClient):
             point.course = self.meshtastic_devices[from_id]["course"]
             point.speed = self.meshtastic_devices[from_id]["speed"]
             point.timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
+            point.point = f"POINT({self.meshtastic_devices[from_id]["last_lon"]} {self.meshtastic_devices[from_id]["last_lat"]})"
 
             with self.context:
                 db.session.add(point)
