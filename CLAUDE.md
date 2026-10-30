@@ -1,5 +1,7 @@
 # hornet-ots — fork of OpenTAKServer for Project Hornet
 
+> **Oct 30 2026: plan v2 supersedes the decisions below** (public Hetzner deploy, new lean `hornet-web` client, groups kept, Traccar dropped). See `01 Tracker/Firmware & Software/Web App Plan.md` and `code/STATE.md`.
+
 Backend for the Hornet wildlife-tracker web app (LoRa/Meshtastic rhino collars).
 Fork of [brian7704/OpenTAKServer](https://github.com/brian7704/OpenTAKServer); `origin` = ilangraicer/hornet-ots, `upstream` = brian7704.
 

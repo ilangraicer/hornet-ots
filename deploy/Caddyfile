@@ -11,7 +11,9 @@
 
 	# No ATAK/iTAK clients: TAK-client APIs and internal hooks are never public
 	@blocked path /Marti* /files/* /api/rabbitmq/* /api/certificate* /api/truststore* /api/itak_qr_string* /api/tak_gov* /api/plugins/* /api/packages*
-	respond @blocked 404
+	handle @blocked {
+		respond 404
+	}
 
 	# Map tiles (PMTiles, served with HTTP range requests) for the web client on Vercel
 	handle /tiles/* {
