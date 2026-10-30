@@ -171,3 +171,7 @@ instance/*
 /data/
 
 .DS_Store
+
+# Hornet deploy secrets / map data
+deploy/.env
+deploy/tiles/*.pmtiles

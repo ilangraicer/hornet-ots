@@ -1,0 +1,99 @@
+# Hornet server stack (PoC). Only Caddy is public (80/443). CoT ingest binds to the Tailscale IP only.
+# Usage on the VPS:  cd /opt/hornet/hornet-ots/deploy && docker compose up -d --build
+name: hornet
+
+x-ots: &ots
+  build: ..
+  image: hornet-ots:local
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    OTS_DATA_FOLDER: /data
+    OTS_LISTENER_ADDRESS: 0.0.0.0
+    OTS_RABBITMQ_SERVER_ADDRESS: rabbitmq
+    SQLALCHEMY_DATABASE_URI: postgresql+psycopg://ots:${POSTGRES_PASSWORD}@db/ots
+    OTS_MEDIAMTX_ENABLE: "false"
+    OTS_ENABLE_EMAIL: "false"
+  volumes:
+    - ots-data:/data
+  depends_on:
+    db: { condition: service_healthy }
+    rabbitmq: { condition: service_healthy }
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ots
+      POSTGRES_DB: ots
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ots -d ots"]
+      interval: 10s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:4-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${OTS_RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${OTS_RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      retries: 10
+
+  # API + web/socket.io. Starts first: on first run it writes /data/config.yml (secrets) that the others read.
+  ots-api:
+    <<: *ots
+    command: ["opentakserver"]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8081/api/health"]
+      interval: 30s
+      start_period: 120s
+      retries: 5
+
+  ots-cot-parser:
+    <<: *ots
+    command: ["cot_parser"]
+    depends_on:
+      ots-api: { condition: service_healthy }
+
+  # Plain TCP CoT for the gateway bridge — reachable only on the tailnet.
+  ots-eud:
+    <<: *ots
+    command: ["eud_handler"]
+    ports:
+      - "${TAILSCALE_IP}:8088:8088"
+    depends_on:
+      ots-api: { condition: service_healthy }
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_HOST: ${API_HOST}
+      WEB_ORIGIN: ${WEB_ORIGIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./tiles:/srv/tiles:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - ots-api
+
+volumes:
+  db-data:
+  rabbitmq-data:
+  ots-data:
+  caddy-data:
+  caddy-config:

@@ -1,30 +1,25 @@
-FROM python:3.13
+# Hornet fork of OpenTAKServer — built from this repo's source (upstream's Dockerfile installs from GitHub master).
+FROM python:3.13-slim
 
-RUN addgroup --gid 1024 ots
-RUN adduser --home /app --disabled-password --gecos "" --force-badname --gid 1024 ots
-RUN apt update && apt install ffmpeg -y
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends openssl curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && groupadd --gid 1024 ots \
+ && useradd --uid 1024 --gid 1024 --home /app --create-home ots
 
+WORKDIR /app
+COPY --chown=ots:ots . /app/src
+RUN python -m venv /app/venv \
+ && /app/venv/bin/pip install --no-cache-dir /app/src "psycopg[binary]"
+
+ENV PATH="/app/venv/bin:$PATH" \
+    OTS_DATA_FOLDER=/data \
+    PYTHONUNBUFFERED=1
+RUN mkdir -p /data && chown ots:ots /data
 USER ots
+VOLUME /data
+EXPOSE 8081 8088
 
-WORKDIR /app/opentakserver
-
-RUN chown -R ots:ots /app
-
-RUN python -m venv /app/venv
-ENV PATH="/app/venv/bin:$PATH"
-
-# TODO: Install from PyPI
-RUN pip install git+https://github.com/brian7704/OpenTAKServer.git
-
-#RUN /app/venv/bin/flask --app /app/venv/lib/python3.13/site-packages/opentakserver/app.py ots create-ca
-#RUN /app/venv/bin/flask --app /app/venv/lib/python3.13/site-packages/opentakserver/app.py db upgrade
-
-EXPOSE 8081
-
-ENTRYPOINT ["opentakserver"]
-
-# Flask will stop gracefully on SIGINT (Ctrl-C).
-# Docker compose tries to stop processes using SIGTERM by default, then sends SIGKILL after a delay if the process doesn't stop.
+# One image, three processes (compose overrides the command): opentakserver | cot_parser | eud_handler
+CMD ["opentakserver"]
 STOPSIGNAL SIGINT
-
-HEALTHCHECK --interval=1m CMD curl --fail http://localhost:8081/api/health || exit 1

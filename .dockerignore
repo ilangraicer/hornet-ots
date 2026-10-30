@@ -1,0 +1,9 @@
+.git
+.venv
+data
+deploy
+htmlcov
+coverage.xml
+*.log
+**/__pycache__
+.DS_Store

@@ -1,0 +1,25 @@
+{$API_HOST} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Map tiles (PMTiles, served with HTTP range requests) for the web client on Vercel
+	handle /tiles/* {
+		header Access-Control-Allow-Origin {$WEB_ORIGIN}
+		header Access-Control-Allow-Headers "Range"
+		header Access-Control-Expose-Headers "Content-Length, Content-Range, ETag"
+		root * /srv
+		file_server
+	}
+
+	# Everything else -> OTS API + socket.io
+	handle {
+		reverse_proxy ots-api:8081
+	}
+}
