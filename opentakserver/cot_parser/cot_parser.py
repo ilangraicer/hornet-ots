@@ -1371,7 +1371,7 @@ def status():
 
 
 def main():
-    sio = SocketIO(message_queue="amqp://" + app.config.get("OTS_RABBITMQ_SERVER_ADDRESS"))
+    sio = SocketIO(message_queue="amqp://{}:{}@{}".format(app.config.get("OTS_RABBITMQ_USERNAME"), app.config.get("OTS_RABBITMQ_PASSWORD"), app.config.get("OTS_RABBITMQ_SERVER_ADDRESS")))
 
     processes = 0
     while processes < app.config.get("OTS_COT_PARSER_PROCESSES"):

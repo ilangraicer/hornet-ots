@@ -187,7 +187,7 @@ def init_extensions(app):
         app,
         logger=socketio_logger,
         ping_timeout=1,
-        message_queue="amqp://" + app.config.get("OTS_RABBITMQ_SERVER_ADDRESS"),
+        message_queue="amqp://{}:{}@{}".format(app.config.get("OTS_RABBITMQ_USERNAME"), app.config.get("OTS_RABBITMQ_PASSWORD"), app.config.get("OTS_RABBITMQ_SERVER_ADDRESS")),
     )
 
     rabbit_credentials = pika.PlainCredentials(
