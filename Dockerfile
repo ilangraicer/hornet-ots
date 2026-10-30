@@ -9,6 +9,9 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --chown=ots:ots . /app/src
+# .git is not in the build context, so pin the version for poetry-dynamic-versioning
+ARG OTS_VERSION=1.7.14
+ENV POETRY_DYNAMIC_VERSIONING_BYPASS=${OTS_VERSION}
 RUN python -m venv /app/venv \
  && /app/venv/bin/pip install --no-cache-dir /app/src "psycopg[binary]"
 
